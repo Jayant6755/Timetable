@@ -6,10 +6,23 @@ import {
   BookOpen,
   Building2,
   Calendar,
-  Settings,
   LogOut,
   Search,
 } from "lucide-react";
+
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 import axios from "axios";
 
@@ -17,6 +30,16 @@ import axios from "axios";
 interface Period {
   subject: string;
   time: string;
+}
+
+interface TeachersInfo{
+  name: string;
+  subject: string;
+  classes: string;
+}
+
+interface subjectInfo{
+  credit: number;
 }
 
 interface DaySchedule {
@@ -109,13 +132,9 @@ export default function AdminDashboard() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-blue-700 flex items-center justify-between">
-          <button className="flex items-center gap-2 hover:text-gray-200">
-            <Settings size={20} />
-            {sidebarOpen && <span className="text-sm">Settings</span>}
-          </button>
-          <button className="hover:text-gray-200">
-            <LogOut size={20} onClick={Logout} className="cursor-pointer"/>
+        <div className="p-4 border-t border-blue-700 flex items-center justify-between ">
+          <button className="hover:text-gray-200  flex gap-4 items-center cursor-pointer justify-center">
+            <LogOut size={20} onClick={Logout} className="cursor-pointer"/> <span>Logout</span>
           </button>
         </div>
       </aside>
@@ -168,6 +187,56 @@ function Teachers() {
     { id: 3, name: "Mr. Rahul Verma", subject: "Computer Science", experience: "6 yrs" },
   ];
 
+  const [Teachers , setTeachers] = useState<TeachersInfo[]>([]);
+  const [name, setname] = useState("");
+   const [subject, setsubject] = useState("");
+    const [classes, setclasses] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent)=>{
+    e.preventDefault();
+
+    const teachers = {
+      name, 
+      subject,
+      classes
+    };
+
+    try {
+   
+    
+    await fetch('http://localhost:5000/api/teacherInfo', {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(teachers)
+    });
+
+    alert("Teacher added successfully");
+    setname("");
+    setsubject("");
+    setclasses("");
+  }
+  catch(error){
+    console.error("Error submitting form", error);
+    alert("Failed to add Teacher");
+
+  }
+
+  };
+
+  useEffect(()=>{
+    const fetchTeachers = async ()=>{
+      try {
+        const tuto = await fetch("http://localhost:5000/api/teacherInfo");
+        if(!tuto) throw new Error("Failed to fetch teachers data");
+        const data = await tuto.json();
+        setTeachers(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchTeachers();
+  }, [handleSubmit]);
+
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4 text-gray-700">All Teachers</h3>
@@ -175,23 +244,60 @@ function Teachers() {
         <table className="w-full text-left">
           <thead className="bg-blue-600 text-white">
             <tr>
-              <th className="px-4 py-2">#</th>
+              
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Subject</th>
-              <th className="px-4 py-2">Experience</th>
+              <th className="px-4 py-2">Classes</th>
             </tr>
           </thead>
           <tbody>
-            {teachers.map((t) => (
-              <tr key={t.id} className="border-b hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-2">{t.id}</td>
+            {Teachers.map((t) => (
+              <tr  className="border-b  hover:bg-gray-50 transition-colors">
+                
                 <td className="px-4 py-2 font-medium">{t.name}</td>
                 <td className="px-4 py-2">{t.subject}</td>
-                <td className="px-4 py-2">{t.experience}</td>
+                <td className="px-4 py-2">{t.classes}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+      <div>
+        <Dialog>
+      
+        <DialogTrigger asChild>
+          <Button variant="outline">Add Teachers +</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Teachers Information</DialogTitle>
+           
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-3">
+              <Label htmlFor="name-1">Name</Label>
+              <Input id="name-1" name="name" onChange={(e) => setname(e.target.value)}  />
+            </div>
+            <div className="grid gap-3">
+              <Label htmlFor="username-1">Subjects</Label>
+              <Input id="username-1" name="username" onChange={(e) => setsubject(e.target.value)} placeholder="Eg. Mobile Computing" />
+            </div>
+             <div className="grid gap-3">
+              <Label htmlFor="username-1">Classes</Label>
+              <Input id="username-1" name="username" onChange={(e) => setclasses(e.target.value)} placeholder="Eg. 3rd-4th Year" />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit">Add</Button>
+          </DialogFooter>
+          </form>
+        </DialogContent>
+      
+    </Dialog>
       </div>
     </div>
   );
@@ -249,17 +355,24 @@ function Classrooms() {
 }
 
 function Timetable() {
-   const [subjects, setSubjects] = useState<string[]>(Array(7).fill(""));
+  const [subjects, setSubjects] = useState<string[]>(Array(7).fill(""));
+  const [credit, setCredit] = useState<number[]>(Array(7).fill(""));
   const [timetable1, setTimetable1] = useState<DaySchedule[] | null>(null);
   const [timetable2, setTimetable2] = useState<DaySchedule[] | null>(null);
+  
 
   const API = "http://localhost:5000/api";
 
   const generateFirstTimetable = async () => {
     try {
+
+      const subjectsInfo = subjects.map((subj, i)=> ({
+        subject : subj,
+        credit: credit[i]
+      }));
+      console.log(subjectsInfo);
+      const res = await axios.post(`${API}/generate-first`, {subject : subjectsInfo});
       
-      const res = await axios.post(`${API}/generate-first`, { subjects });
-      console.log("done");
       console.log(res.data.timetable)
      setTimetable1(res.data.timetable);
       setTimetable2(null);
@@ -326,8 +439,9 @@ function Timetable() {
       <h1 className="text-3xl font-bold mb-6 text-center">Final Year(CSE) TimeTable</h1>
 
       {/* SUBJECT INPUT BOXES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid  grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {subjects.map((subj, i) => (
+          <div className="flex gap-5">
           <input
             key={i}
             type="text"
@@ -342,7 +456,28 @@ function Timetable() {
               setSubjects(newSubjects);
             }}
           />
+          
+          {/* Subject Credits */}
+      <input
+        type="number"
+        min={0}
+        max={5}
+        placeholder="Credits"
+        className="border p-2 rounded border-green-600"
+        value={credit[i]}
+        onChange={(e) => {
+          const newCredit = [...credit];
+          newCredit[i] = parseInt(e.target.value) || 0;
+          setCredit(newCredit);
+        }}
+      />
+          
+          </div>
+          
+          
         ))}
+    
+        
       </div>
 
       {/* BUTTONS */}

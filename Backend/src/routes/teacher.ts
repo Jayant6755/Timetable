@@ -1,6 +1,6 @@
 import  express  from "express";
 import bcrypt from "bcrypt";
-import User from "../models/teachermodell";
+import Teacher from "../models/teachermodel";
 import  Jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { sign } from "crypto";  
@@ -15,12 +15,12 @@ router.post("/signup/teacher", async (req, res)=>{
     try {
         const {email,password} = req.body;
 
-        const existing = await User.findOne({email});
+        const existing = await Teacher.findOne({email});
         if(existing) return res.json({message: "Mail already existing"});
         
 
         const hashed = await bcrypt.hash(password,10);
-        const newUser =  new User ({email,password: hashed});
+        const newUser =  new Teacher ({email,password: hashed});
         await newUser.save();
         
 
@@ -37,10 +37,10 @@ router.post("/login/teacher", async (req, res)=>{
     try {
         const {email, password} = req.body;
 
-    const check = await User.findOne({email});
+    const check = await Teacher.findOne({email});
     if(!check) return res.json({message: "User not Found"});
     
-    const comp = await bcrypt.compare(password, check.password);
+    const comp = await bcrypt.compare(password, check.password as string);
     if(!comp) return res.json({message: "Invalid Password"});
     
     if(!process.env.JWT_SECRET){

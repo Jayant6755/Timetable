@@ -6,6 +6,7 @@ import teacherRoutes from "./routes/teacher";
 import dashboardrouter from "./routes/dashboard";
 import admin from "./routes/admin";
 import timetableRoutes from "./routes/timetableRoutes";
+import teacherInfo from "./routes/teacherInfo";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/", teacherRoutes);
 app.use("/", dashboardrouter);
 app.use("/", admin);
 app.use("/api", timetableRoutes);
+app.use("/api/teacherInfo", teacherInfo);
 
 
 

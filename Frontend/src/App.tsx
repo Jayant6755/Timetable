@@ -9,7 +9,7 @@ import TeacherDemo from "./Loginpage/teacherlogin";
 
 import AdminDashboard from "./pages/Admindashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
-import Timetable from "./pages/Timetable";
+
 
 
 
@@ -23,7 +23,7 @@ function App() {
         <Route path="/admin" element={<AdminDashboard/>}/>
         <Route path="/teacher" element={<TeacherDashboard/>}/>
         {/* <Route path="/teacher/form" element={<TeacherForm/>}/> */}
-        <Route path="/timetable" element={<Timetable/>}/>
+        
         <Route path="/adminlogin" element={<CardDemo/>} />
         <Route path="/teacherlogin" element={<TeacherDemo/>}/>
         

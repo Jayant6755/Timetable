@@ -1,6 +1,6 @@
 import express from "express";
 import { verifyToken, AuthRequest } from "../middleware/authmiddleware";
-import User from "../models/teachermodell";
+import User from "../models/teacherInfomodell";
 
 const router = express.Router();
 
