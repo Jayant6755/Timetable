@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   });
 
   const tabs = [
-    { id: "teachers", label: "Teachers", icon: <Users size={20} /> },
+    { id: "teachers", label: "Madam", icon: <Users size={20} /> },
     { id: "courses", label: "Courses", icon: <BookOpen size={20} /> },
     { id: "classrooms", label: "Classrooms", icon: <Building2 size={20} /> },
     { id: "timetable", label: "Generate Timetable", icon: <Calendar size={20} /> },
