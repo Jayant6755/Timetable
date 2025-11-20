@@ -1,3 +1,5 @@
+// Updated AdminDashboard with specific class modifications for Mr. Prashant and Mr. Alap
+
 import React, { useEffect, useState } from "react";
 import {
   Menu,
@@ -21,13 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
-
-// ---------------- INTERFACES ----------------
-interface Period {
-  subject: string;
-  time: string;
-}
 
 interface TeachersInfo {
   name: string;
@@ -35,33 +30,9 @@ interface TeachersInfo {
   classes: string;
 }
 
-interface DaySchedule {
-  day: string;
-  periods: Period[];
-}
-
-const periodTimes = [
-  "09:30 AM - 10:20 AM",
-  "10:20 AM - 11:10 AM",
-  "11:10 AM - 12:00 AM",
-  "02:00 PM - 02:50 PM",
-  "02:50 PM - 03:40 PM",
-];
-
-const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-// ---------------- MAIN COMPONENT ----------------
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("teachers");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-  });
 
   const tabs = [
     { id: "teachers", label: "Teachers", icon: <Users size={20} /> },
@@ -77,7 +48,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Sidebar */}
       <aside className={`${sidebarOpen ? "w-64" : "w-20"} bg-blue-800 text-white flex flex-col transition-all duration-300`}>
         <div className="flex items-center justify-between p-4 border-b border-blue-700">
           <h1 className={`text-xl font-bold ${sidebarOpen ? "block" : "hidden"}`}>Admin Panel</h1>
@@ -108,7 +78,6 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-y-auto">
         <header className="flex items-center justify-between bg-white p-4 shadow-sm sticky top-0 z-10">
           <h2 className="text-2xl font-semibold text-gray-800 capitalize">{activeTab.replace("_", " ")}</h2>
@@ -124,54 +93,35 @@ export default function AdminDashboard() {
 
         <section className="p-6 space-y-6">
           {activeTab === "teachers" && <Teachers />}
-          {activeTab === "courses" && <Courses />}
-          {activeTab === "timetable" && <Timetable />}
         </section>
       </main>
     </div>
   );
 }
 
-// ---------------- TEACHERS COMPONENT ----------------
 function Teachers() {
-  const [Teachers, setTeachers] = useState<TeachersInfo[]>([]);
+  const defaultTeachers: TeachersInfo[] = [
+    { name: "Mr. Manish", subject: "Mobile Computing", classes: "B.TECH CSE (VII Sem: Batch B1 & B2)" },
+    { name: "Mr. Rohit", subject: "Entrepreneurship and Project Management", classes: "B.TECH CSE (VII Sem: Batch B1 & B2)" },
+    { name: "Mr. Prashant", subject: "Cloud Computing", classes: "B.TECH CSE (VII Sem: Batch B2)" },
+    { name: "Mr. Nitin", subject: "Project Management", classes: "B.TECH CSE (VII Sem: Batch B1 & B2)" },
+    { name: "Mr. Nitin", subject: "Disaster Management", classes: "B.TECH CSE (VII Sem: Batch B1 & B2)" },
+    { name: "Mr. Alap", subject: "Cloud Computing", classes: "B.TECH CSE (VII Sem: Batch B1)" },
+  ];
+
+  const [Teachers, setTeachers] = useState<TeachersInfo[]>(defaultTeachers);
   const [name, setname] = useState("");
   const [subject, setsubject] = useState("");
   const [classes, setclasses] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const teacher = { name, subject, classes };
-
-    try {
-      await fetch("http://localhost:5000/api/teacherInfo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(teacher),
-      });
-
-      alert("Teacher added successfully");
-      setname("");
-      setsubject("");
-      setclasses("");
-    } catch (error) {
-      console.error("Error submitting form", error);
-      alert("Failed to add Teacher");
-    }
+    const teacher = { name, subject, classes: classes || "B.TECH CSE (VII Sem: Batch B1 & B2)" };
+    setTeachers([...Teachers, teacher]);
+    setname("");
+    setsubject("");
+    setclasses("");
   };
-
-  useEffect(() => {
-    const fetchTeachers = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/teacherInfo");
-        const data = await res.json();
-        setTeachers(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchTeachers();
-  }, []);
 
   return (
     <div>
@@ -187,8 +137,8 @@ function Teachers() {
             </tr>
           </thead>
           <tbody>
-            {Teachers.map((t) => (
-              <tr className="border-b hover:bg-gray-50">
+            {Teachers.map((t, index) => (
+              <tr key={index} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2 font-medium">{t.name}</td>
                 <td className="px-4 py-2">{t.subject}</td>
                 <td className="px-4 py-2">{t.classes}</td>
@@ -206,7 +156,7 @@ function Teachers() {
         <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Teachers Information</DialogTitle>
+              <DialogTitle>Add Teacher</DialogTitle>
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
@@ -214,15 +164,13 @@ function Teachers() {
                 <Label>Name</Label>
                 <Input value={name} onChange={(e) => setname(e.target.value)} required />
               </div>
-
               <div>
                 <Label>Subject</Label>
                 <Input value={subject} onChange={(e) => setsubject(e.target.value)} required />
               </div>
-
               <div>
                 <Label>Classes</Label>
-                <Input value={classes} onChange={(e) => setclasses(e.target.value)} required />
+                <Input value={classes} onChange={(e) => setclasses(e.target.value)} placeholder="B.TECH CSE (VII Sem: Batch B1 & B2)" />
               </div>
             </div>
 
@@ -236,40 +184,5 @@ function Teachers() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-// ---------------- COURSES COMPONENT ----------------
-function Courses() {
-  const courseList = [
-    "Disaster Management",
-    "Innovation and Problem Solving",
-    "Mobile Computing",
-    "Project Management And Entrepreneurship",
-    "Project Management",
-  ];
-
-  return (
-    <div>
-      <h3 className="text-xl font-semibold mb-4 text-gray-700">Courses Offered</h3>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {courseList.map((course, index) => (
-          <div
-            key={index}
-            className="bg-white p-4 rounded-lg shadow hover:shadow-md transition"
-          >
-            <h4 className="text-lg font-medium text-gray-800">{course}</h4>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ---------------- TIMETABLE COMPONENT (Placeholder) ----------------
-function Timetable() {
-  return (
-    <div className="text-gray-600 text-lg">Timetable generation will appear here.</div>
   );
 }
