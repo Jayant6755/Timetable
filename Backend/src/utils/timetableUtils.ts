@@ -1,3 +1,8 @@
+export interface SubjectCredit {
+  subject: string;
+  credit: number;
+}
+
 export interface Period {
   subject: string;
   time: string;
@@ -8,14 +13,21 @@ export interface DaySchedule {
   periods: Period[];
 }
 
-const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+const days = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday"
+];
 
 const periodTimes = [
   "09:30 AM - 10:20 AM",
   "10:20 AM - 11:10 AM",
   "11:10 AM - 12:00 AM",
   "02:00 PM - 02:50 PM",
-  "02:50 PM - 03:40 PM",
+  "02:50 PM - 03:40 PM"
 ];
 
 // Shuffle helper
@@ -28,63 +40,96 @@ const shuffleArray = <T>(array: T[]): T[] => {
   return arr;
 };
 
-// First Timetable
-export const generateFirstTimetable = (subjects: string[]): DaySchedule[] => {
-  return days.map((day) => {
-    const sat = day === "Saturday" ? 3 : periodTimes.length;
+// 💡 Expand subjects based on credits
+// Example:
+// [{subject:"DBMS", credit:3}] → ["DBMS","DBMS","DBMS"]
+const expandSubjectsByCredit = (subject: SubjectCredit[]): string[] => {
+  let expanded: string[] = [];
+  subject.forEach(({ subject, credit }) => {
+    for (let i = 0; i < credit; i++) {
+      expanded.push(subject);
+    }
+  });
+  console.log(expanded)
+  return expanded;
+};
 
-    const shuffled = shuffleArray(subjects).slice(0, sat);
-    
-    const periods = shuffled
-      .map((subject, i) => ({
-        subject,
-        time: periodTimes[i]!,
-      }))
-      .filter((p) => p.time !== undefined);
-      
-      
+//first timetable
+export const generateFirstTimetable = (
+  subject: SubjectCredit[]
+): DaySchedule[] => {
+  const expandedSubjects = expandSubjectsByCredit(subject);
+  
+  return days.map((day) => {
+    // Saturday only 3 periods
+    const periodCount = day === "Saturday" ? 3 : periodTimes.length;
+
+    // Choose subjects based on credits
+    const shuffled = shuffleArray(expandedSubjects).slice(0, periodCount);
+
+    const periods: Period[] = shuffled.map((subject, index) => ({
+      subject,
+      time: periodTimes[index]!
+    }));
+
     return { day, periods };
   });
 };
-// Second Timetable
+
+// ************************************
+// SECOND TIMETABLE 
+// (keeps highest credit subjects in fixed slots)
+// ************************************
 export const generateSecondTimetable = (
   timetable1: DaySchedule[],
   subjects: string[]
 ): DaySchedule[] => {
 
- 
+  // Take first 3 subjects that user wrote
+  const rotateSubjects = subjects.slice(0, 2);
 
-  const fixedSubjects = subjects.slice(3, 7); // fixed subjects = last four
-  const variableSubjects = subjects.slice(0, 3); // first three can change
+  // Collect all occurrences of these subjects in timetable (in order)
+  const occurrences: string[] = [];
 
-  return timetable1.map((daySchedule) => {
-    const limit = daySchedule.periods.length;
+  timetable1.forEach((day) => {
+    day.periods.forEach((p) => {
+      if (rotateSubjects.includes(p.subject)) {
+        occurrences.push(p.subject);
+      }
+    });
+  });
 
-    const fixedPeriods = daySchedule.periods
-      .filter((p) => fixedSubjects.includes(p.subject))
-      .slice(0, limit)
-      .map((p) => ({ ...p }));
+  // Not enough subjects to rotate
+  if (occurrences.length < 2) return timetable1;
 
-    const remainingTimes = periodTimes
-    .slice(0, limit)
-    .filter(
-      (time) => !fixedPeriods.some((fp) => fp.time === time)
-    );
+  // Rotate globally
+  const rotated = [
+    occurrences[occurrences.length - 1],
+    ...occurrences.slice(0, occurrences.length - 1)
+  ];
 
-    const shuffledVars = shuffleArray(variableSubjects).slice(0, remainingTimes.length);
+  // Rebuild timetable by placing rotated values back
+  let index = 0;
 
-    const variablePeriods = remainingTimes
-      .map((time, i) => ({
-        subject: shuffledVars[i]!,
-        time,
-      }))
-      .filter((p) => p.subject !== undefined);
+  return timetable1.map((day) => {
+    
+
+
+    const newPeriods = day.periods.map((p) => {
+      if (rotateSubjects.includes(p.subject)) {
+        let newSubject = rotated[index] ?? p.subject;
+        index++;
+
+       
+        return { ...p, subject: newSubject };
+      }
+      
+      return p;
+    });
 
     return {
-      day: daySchedule.day,
-      periods: [...fixedPeriods, ...variablePeriods].sort(
-        (a, b) => periodTimes.indexOf(a.time) - periodTimes.indexOf(b.time)
-      ),
+      day: day.day,
+      periods: newPeriods
     };
   });
 };

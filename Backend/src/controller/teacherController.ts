@@ -14,6 +14,7 @@ router.get("/teacher", async (req,res)=>{
        
 
         const newteacher = new User({name,course});
+        console.log(newteacher);
         await newteacher.save();
         return res.json({message: "Teacher Added", newteacher});
     } catch (error) {
