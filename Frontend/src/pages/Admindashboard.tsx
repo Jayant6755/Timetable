@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
+
 import {
   Menu,
   X,
@@ -7,12 +8,13 @@ import {
   Calendar,
   LogOut,
   Search,
-  LucideDelete,
-  LucideRecycle,
-  RecycleIcon,
-  Delete,
   LucideTrash,
+  LucideSave,
 } from "lucide-react";
+
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,10 +30,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import axios from "axios";
+import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 
 interface Period {
   subject: string;
   time: string;
+  teacher: string;
 }
 
 interface TeachersInfo {
@@ -325,14 +329,18 @@ function Teachers() {
 
 function Courses() {
   const courses = [
-    { code: "PHY101", name: "Physics Fundamentals", credits: 4 },
-    { code: "MAT201", name: "Calculus II", credits: 3 },
-    { code: "CSE305", name: "Data Structures", credits: 3 },
-  ];
+    { code: "AHT-016", name: "PROJECT MANAGEMENT & ENTREPRENEURSHIP", credits: 3 },
+    { code: "CST-030", name: "MACHINE LEARNING", credits: 3 },
+    { code: "CST-031", name: "MOBILE COMPUTING", credits:3},
+    { code: "CST-037", name: "CLOUD COMPUTING", credits: 3 },
+    { code: "CSP-017", name: "MACHINE LEARNING LAB", credits: 1 },
+    { code: "AHT-017", name: "DISASTER MANAGEMENT", credits:3},
+    { code: "PPT-017", name: "PROJECT MANAGEMENT", credits: 3 },
+];
 
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-4 text-gray-700">Available Courses</h3>
+      <h3 className="text-xl font-semibold mb-4 text-gray-700">4th Year Courses</h3>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((c) => (
           <div key={c.code} className="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition-shadow">
@@ -347,10 +355,27 @@ function Courses() {
 }
 
 function Timetable() {
-  const [subjects, setSubjects] = useState<string[]>(Array(7).fill(""));
-  const [credit, setCredit] = useState<number[]>(Array(7).fill(0));
+  const [subjects, setSubjects] = useState<string[]>(()=>{
+    const saved = localStorage.getItem("subjects");
+    return saved ? JSON.parse(saved) : Array(7).fill("");
+  });
+  const [credit, setCredit] = useState<number[]>(()=>{
+    const saved = localStorage.getItem("credit");
+    return saved ? JSON.parse(saved) : Array(7).fill(0);
+  });
+  //save subjects and credit to localstorage
+  useEffect(() => {
+    localStorage.setItem("subjects", JSON.stringify(subjects));
+    localStorage.setItem("credit", JSON.stringify(credit));
+  },[subjects, credit]);
+
   const [timetable1, setTimetable1] = useState<DaySchedule[] | null>(null);
   const [timetable2, setTimetable2] = useState<DaySchedule[] | null>(null);
+  const [teacher, setTeacher] = useState<string[]>(()=>{
+    const saved = localStorage.getItem("teacher");
+    return saved ? JSON.parse(saved) : Array(7).fill("");
+  });
+ 
 
   const API = "http://localhost:5000/api";
 
@@ -359,8 +384,10 @@ function Timetable() {
       const subjectsInfo = subjects.map((subj, i) => ({
         subject: subj,
         credit: credit[i],
+        teacher: teacher[i],
       }));
-      console.log("subjectsInfo:", subjectsInfo);
+      
+      
       const res = await axios.post(`${API}/generate-first`, { subject: subjectsInfo });
       setTimetable1(res.data.timetable);
       setTimetable2(null);
@@ -411,7 +438,9 @@ function Timetable() {
               {day.periods.map((p, j) => (
                 <td key={j} className="border px-4 py-2">
                   {p.subject}
+                  {p.teacher && <div className="text-sm text-gray-600 mt-1">({p.teacher})</div>}
                 </td>
+                
               ))}
             </tr>
           ))}
@@ -420,12 +449,45 @@ function Timetable() {
     </div>
   );
 
+  //save timetable function
+  const saveTimetable = async () => {
+    try {
+       
+      const res = await axios.post(`${API}/saveTimetable`, {
+        batchId: "batch1",
+        timetable: timetable1,
+      });
+     
+      alert("Timetable saved successfully");
+    } catch (error) {
+      console.error(error);
+      alert("Error saving timetable");
+    }
+  };
+  //save timetable function for batch 2
+  const saveTimetable2 = async () => {
+    try {
+       
+      const res = await axios.post(`${API}/saveTimetable`, {
+        batchId: "batch2",
+        timetable: timetable2,
+      });
+     
+      alert("Batch-2 Timetable saved successfully");
+    } catch (error) {
+      console.error(error);
+      alert("Error saving timetable");
+    }
+  };
+
+  
+
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6 text-center">Final Year(CSE) TimeTable</h1>
 
       {/* SUBJECT INPUT BOXES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 ">
         {subjects.map((subj, i) => (
           <div key={`subject-row-${i}`} className="flex gap-5">
             <input
@@ -455,6 +517,32 @@ function Timetable() {
                 setCredit(newCredit);
               }}
             />
+
+            <div>
+              
+             <select
+                id="myDropdown"
+                name="selectOption"
+                className="border-1 rounded-lg p-2 px-2 bg-transparent border-green-500"
+                value={teacher[i]}
+                onChange={(e)=> {
+                  const newteacher = [...teacher];
+                  newteacher[i] = e.target.value;
+                  setTeacher(newteacher);
+                }}
+              >
+                <option value="" disabled selected>
+                    Select Teacher
+                </option>
+
+                 <option value="Manish">Manish</option>
+                 <option value="Alap Maher">Alap Maher</option>
+                 <option value="Nitin Chimwal">Nitin Chimwal</option>
+                 <option value="Kaushal">Kaushal</option>
+                 <option value="Rohit">Rohit</option>
+                </select>
+            </div>
+
           </div>
         ))}
       </div>
@@ -480,6 +568,11 @@ function Timetable() {
         <>
           <h2 className="text-2xl font-semibold mb-2">📅 Batch-1 Timetable</h2>
           {renderTable(timetable1)}
+           <button onClick={saveTimetable}
+          className="flex justify-center items-center bg-green-600 cursor-pointer text-white px-6 py-2 rounded hover:bg-green-700"
+        >
+          Save <LucideSave className="inline-block ml-2" />
+        </button>
         </>
       )}
 
@@ -487,6 +580,11 @@ function Timetable() {
         <>
           <h2 className="text-2xl font-semibold mb-2">📅 Batch-2 Timetable</h2>
           {renderTable(timetable2)}
+             <button onClick={saveTimetable2}
+          className="flex justify-center items-center bg-green-600 cursor-pointer text-white px-6 py-2 rounded hover:bg-green-700"
+        >
+          Save <LucideSave className="inline-block ml-2" />
+        </button>
         </>
       )}
     </div>

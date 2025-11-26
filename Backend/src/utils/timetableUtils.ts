@@ -1,11 +1,13 @@
 export interface SubjectCredit {
   subject: string;
   credit: number;
+  teacher: string;
 }
 
 export interface Period {
   subject: string;
   time: string;
+  teacher: string;
 }
 
 export interface DaySchedule {
@@ -50,7 +52,7 @@ const expandSubjectsByCredit = (subject: SubjectCredit[]): string[] => {
       expanded.push(subject);
     }
   });
-  console.log(expanded)
+ 
   return expanded;
 };
 
@@ -67,11 +69,16 @@ export const generateFirstTimetable = (
     // Choose subjects based on credits
     const shuffled = shuffleArray(expandedSubjects).slice(0, periodCount);
 
-    const periods: Period[] = shuffled.map((subject, index) => ({
-      subject,
-      time: periodTimes[index]!
-    }));
-
+    const periods: Period[] = shuffled.map((subjectName, index) => {
+      const subjectObj = subject.find(s => s.subject === subjectName);
+      return {
+        subject: subjectName,
+        teacher: subjectObj?.teacher || "",
+        time: periodTimes[index]!
+        
+      };
+    });
+   
     return { day, periods };
   });
 };
